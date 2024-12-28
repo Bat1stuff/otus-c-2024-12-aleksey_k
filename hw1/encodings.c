@@ -21,7 +21,7 @@ int main(const int argc, const char * argv[])
         exit(EXIT_FAILURE);
     }
     if ((fout = fopen(argv[3], "w")) == NULL) {
-        printf("Error opening file named %s\n", argv[3]);
+        printf("Error creating file named %s\n", argv[3]);
         exit(EXIT_FAILURE);
     }
     checkEncoding(argv[2]);
