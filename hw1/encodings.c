@@ -8,26 +8,32 @@ void koi8ToUtf8(int ch, char *result, int * i);
 void iso8859_5ToUtf8(int ch, char *result, int * i);
 void checkEncoding(const char *encoding);
 
-int main(int argc, const char * argv[])
+int main(const int argc, const char * argv[])
 {
-    FILE* fp;
-    if (argc != 3) {
-        printf("Usage: %s filename encoding (iso8859-5, koi8, cp1251)\n", argv[0]);
+    FILE* fin;
+    FILE* fout;
+    if (argc != 4) {
+        printf("Usage: %s input_file encoding (iso8859-5, koi8, cp1251) output_file\n", argv[0]);
         exit(EXIT_FAILURE);
     }
-    if ((fp = fopen(argv[1], "r")) == NULL) {
+    if ((fin = fopen(argv[1], "r")) == NULL) {
         printf("Error opening file named %s\n", argv[1]);
         exit(EXIT_FAILURE);
     }
+    if ((fout = fopen(argv[3], "w")) == NULL) {
+        printf("Error opening file named %s\n", argv[3]);
+        exit(EXIT_FAILURE);
+    }
     checkEncoding(argv[2]);
-    fseek(fp, 0, SEEK_END);
-    long size = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
+    fseek(fin, 0, SEEK_END);
+    const long size = ftell(fin);
+    fseek(fin, 0, SEEK_SET);
     char *result = malloc(size*sizeof(char) * 4);
-    transform(fp, argv[2], result);
-    printf("%s\n", result);
+    transform(fin, argv[2], result);
+    fprintf(fout, "%s", result);
     free(result);
-    fclose(fp);
+    fclose(fin);
+    fclose(fout);
 
     return EXIT_SUCCESS;
 }
@@ -53,7 +59,7 @@ void transform(FILE *fp, const char *encoding, char *result)
             iso8859_5ToUtf8(ch, result, &index);
             continue;
         }
-        if (strcmp("koi8", encoding) == 0) { //iso8859_5
+        if (strcmp("koi8", encoding) == 0) { //koi8
             koi8ToUtf8(ch, result, &index);
             continue;
         }
@@ -165,6 +171,10 @@ void koi8ToUtf8(const int ch, char *result, int * i)
         [179] = {'\320','\201'},
         [163] = {'\320','\221'},
     };
+
+    if (ch > 255 || ch < 128) { // NOT a koi8 symbol (слабая проверка, но лень делать что-то лучше:))
+        return;
+    }
 
     result[(*i)++] = map[ch][0];
     result[(*i)++] = map[ch][1];
