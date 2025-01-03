@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#define UTF8_MAX_BYTES 4
+#define LAST_ASCII_SYMBOL 127
 
 void transform(FILE *fp, const char *encoding, char *result);
 void cp1251ToUtf8(int ch, char *result, int * i);
@@ -22,13 +24,14 @@ int main(const int argc, const char * argv[])
     }
     if ((fout = fopen(argv[3], "w")) == NULL) {
         printf("Error creating file named %s\n", argv[3]);
+        fclose(fin);
         exit(EXIT_FAILURE);
     }
     checkEncoding(argv[2]);
     fseek(fin, 0, SEEK_END);
     const long size = ftell(fin);
     fseek(fin, 0, SEEK_SET);
-    char *result = malloc(size*sizeof(char) * 4);
+    char *result = malloc(size*sizeof(char) * UTF8_MAX_BYTES);
     transform(fin, argv[2], result);
     fprintf(fout, "%s", result);
     free(result);
@@ -46,24 +49,32 @@ void transform(FILE *fp, const char *encoding, char *result)
     }
     int ch;
     int index = 0;
-    while ((ch = getc(fp)) != EOF) {
-        if (ch < 127) { // for ascii symbols
-            result[index++] = (char) ch;
-            continue;
-        }
-        if (strcmp("cp1251", encoding) == 0) { //cp-1251
+    if (strcmp("cp1251", encoding) == 0) { //cp-1251
+        while ((ch = getc(fp)) != EOF) {
+            if (ch <= LAST_ASCII_SYMBOL) {
+                result[index++] = (char) ch;
+                continue;
+            }
             cp1251ToUtf8(ch, result, &index);
-            continue;
         }
-        if (strcmp("iso8859_5", encoding) == 0) { //iso8859_5
+    } else if (strcmp("iso8859_5", encoding) == 0) { //iso8859_5
+        while ((ch = getc(fp)) != EOF) {
+            if (ch <= LAST_ASCII_SYMBOL) {
+                result[index++] = (char) ch;
+                continue;
+            }
             iso8859_5ToUtf8(ch, result, &index);
-            continue;
         }
-        if (strcmp("koi8", encoding) == 0) { //koi8
+    } else if (strcmp("koi8", encoding) == 0) { //koi8
+        while ((ch = getc(fp)) != EOF) {
+            if (ch <= LAST_ASCII_SYMBOL) {
+                result[index++] = (char) ch;
+                continue;
+            }
             koi8ToUtf8(ch, result, &index);
-            continue;
         }
     }
+
     result[index] = '\0';
 }
 
