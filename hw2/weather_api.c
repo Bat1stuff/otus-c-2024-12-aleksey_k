@@ -90,7 +90,7 @@ int main(const int argc, const char * argv[])
     if(!curl) {
         exit(EXIT_FAILURE);
     }
-    struct memory chunk = {nullptr};
+    struct memory chunk = {NULL};
     json_object *currentCities;
     json_object *tempC;
     json_object *weatherCode;
