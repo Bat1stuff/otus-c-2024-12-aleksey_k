@@ -16,7 +16,7 @@ int main(const int argc, const char * argv[])
     FILE* fin;
     FILE* fout;
     if (argc != 4) {
-        printf("Usage: %s input_file encoding (iso8859-5, koi8, cp1251) output_file\n", argv[0]);
+        printf("Usage: %s input_file encoding (iso8859_5, koi8, cp1251) output_file\n", argv[0]);
         exit(EXIT_FAILURE);
     }
     if ((fin = fopen(argv[1], "r")) == NULL) {
@@ -187,6 +187,6 @@ Encoder getEncoder(const char *encoding)
         return &koi8ToUtf8;
     }
 
-    printf("Unsupported encoding: %s, please provide one of (iso8859-5, koi8, cp1251).\n", encoding);
+    printf("Unsupported encoding: %s, please provide one of (iso8859_5, koi8, cp1251).\n", encoding);
     exit(EXIT_FAILURE);
 }
