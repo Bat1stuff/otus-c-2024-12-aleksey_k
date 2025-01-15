@@ -49,30 +49,23 @@ void transform(FILE *fp, const char *encoding, char *result)
     }
     int ch;
     int index = 0;
+    void (*encode)(int ch, char *result, int * i);
     if (strcmp("cp1251", encoding) == 0) { //cp-1251
-        while ((ch = getc(fp)) != EOF) {
-            if (ch <= LAST_ASCII_SYMBOL) {
-                result[index++] = (char) ch;
-                continue;
-            }
-            cp1251ToUtf8(ch, result, &index);
-        }
+        encode = &cp1251ToUtf8;
     } else if (strcmp("iso8859_5", encoding) == 0) { //iso8859_5
-        while ((ch = getc(fp)) != EOF) {
-            if (ch <= LAST_ASCII_SYMBOL) {
-                result[index++] = (char) ch;
-                continue;
-            }
-            iso8859_5ToUtf8(ch, result, &index);
-        }
+        encode = &iso8859_5ToUtf8;
     } else if (strcmp("koi8", encoding) == 0) { //koi8
-        while ((ch = getc(fp)) != EOF) {
-            if (ch <= LAST_ASCII_SYMBOL) {
-                result[index++] = (char) ch;
-                continue;
-            }
-            koi8ToUtf8(ch, result, &index);
+        encode = &koi8ToUtf8;
+    } else {
+        printf("Unknown encoding\n");
+        exit(EXIT_FAILURE);
+    }
+    while ((ch = getc(fp)) != EOF) {
+        if (ch <= LAST_ASCII_SYMBOL) {
+            result[index++] = (char) ch;
+            continue;
         }
+        encode(ch, result, &index);
     }
 
     result[index] = '\0';
