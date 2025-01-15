@@ -42,7 +42,7 @@ int main(const int argc, const char * argv[])
     return EXIT_SUCCESS;
 }
 
-void transform(FILE *fp, Encoder encode, char *result)
+void transform(FILE *fp, const Encoder encode, char *result)
 {
     if (result == NULL) {
         printf("Result string pointer is null\n");
