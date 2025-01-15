@@ -4,11 +4,12 @@
 #define UTF8_MAX_BYTES 4
 #define LAST_ASCII_SYMBOL 127
 
-void transform(FILE *fp, const char *encoding, char *result);
+typedef void (*Encoder)(int ch, char *result, int * i);
+void transform(FILE *fp, Encoder encode, char *result);
 void cp1251ToUtf8(int ch, char *result, int * i);
 void koi8ToUtf8(int ch, char *result, int * i);
 void iso8859_5ToUtf8(int ch, char *result, int * i);
-void checkEncoding(const char *encoding);
+Encoder getEncoder(const char *encoding);
 
 int main(const int argc, const char * argv[])
 {
@@ -27,12 +28,12 @@ int main(const int argc, const char * argv[])
         fclose(fin);
         exit(EXIT_FAILURE);
     }
-    checkEncoding(argv[2]);
+    const Encoder encode = getEncoder(argv[2]);
     fseek(fin, 0, SEEK_END);
     const long size = ftell(fin);
     fseek(fin, 0, SEEK_SET);
     char *result = malloc(size*sizeof(char) * UTF8_MAX_BYTES);
-    transform(fin, argv[2], result);
+    transform(fin, encode, result);
     fprintf(fout, "%s", result);
     free(result);
     fclose(fin);
@@ -41,7 +42,7 @@ int main(const int argc, const char * argv[])
     return EXIT_SUCCESS;
 }
 
-void transform(FILE *fp, const char *encoding, char *result)
+void transform(FILE *fp, Encoder encode, char *result)
 {
     if (result == NULL) {
         printf("Result string pointer is null\n");
@@ -49,17 +50,7 @@ void transform(FILE *fp, const char *encoding, char *result)
     }
     int ch;
     int index = 0;
-    void (*encode)(int ch, char *result, int * i);
-    if (strcmp("cp1251", encoding) == 0) { //cp-1251
-        encode = &cp1251ToUtf8;
-    } else if (strcmp("iso8859_5", encoding) == 0) { //iso8859_5
-        encode = &iso8859_5ToUtf8;
-    } else if (strcmp("koi8", encoding) == 0) { //koi8
-        encode = &koi8ToUtf8;
-    } else {
-        printf("Unknown encoding\n");
-        exit(EXIT_FAILURE);
-    }
+
     while ((ch = getc(fp)) != EOF) {
         if (ch <= LAST_ASCII_SYMBOL) {
             result[index++] = (char) ch;
@@ -184,19 +175,16 @@ void koi8ToUtf8(const int ch, char *result, int * i)
     result[(*i)++] = map[ch][1];
 }
 
-void checkEncoding(const char *encoding)
+Encoder getEncoder(const char *encoding)
 {
-    static char availableEncodings[][10] = {
-        "iso8859-5",
-        "koi8",
-        "cp1251"
-    };
-    int i = 0;
-    const int size = sizeof(availableEncodings) / sizeof(availableEncodings[0]);
-    while (i < size) {
-        if (strcmp(encoding, availableEncodings[i++]) == 0) {
-            return;
-        }
+    if (strcmp("cp1251", encoding) == 0) { //cp-1251
+        return &cp1251ToUtf8;
+    }
+    if (strcmp("iso8859_5", encoding) == 0) { //iso8859_5
+        return &iso8859_5ToUtf8;
+    }
+    if (strcmp("koi8", encoding) == 0) { //koi8
+        return &koi8ToUtf8;
     }
 
     printf("Unsupported encoding: %s, please provide one of (iso8859-5, koi8, cp1251).\n", encoding);
