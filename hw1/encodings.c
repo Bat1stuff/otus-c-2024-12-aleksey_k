@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #define UTF8_MAX_BYTES 4
 #define LAST_ASCII_SYMBOL 127
 
@@ -13,6 +14,7 @@ Encoder getEncoder(const char *encoding);
 
 int main(const int argc, const char * argv[])
 {
+    struct stat sb;
     FILE* fin;
     FILE* fout;
     if (argc != 4) {
@@ -28,10 +30,9 @@ int main(const int argc, const char * argv[])
         fclose(fin);
         exit(EXIT_FAILURE);
     }
+    fstat(fileno(fin), &sb);
+    const long size = sb.st_size;
     const Encoder encode = getEncoder(argv[2]);
-    fseek(fin, 0, SEEK_END);
-    const long size = ftell(fin);
-    fseek(fin, 0, SEEK_SET);
     char *result = malloc(size*sizeof(char) * UTF8_MAX_BYTES);
     transform(fin, encode, result);
     fprintf(fout, "%s", result);
