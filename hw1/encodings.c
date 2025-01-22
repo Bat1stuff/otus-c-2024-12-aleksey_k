@@ -3,11 +3,11 @@
 #include <string.h>
 #define LAST_ASCII_SYMBOL 127
 
-typedef void (*Encoder)(int ch, char *result, int * i);
+typedef void (*Encoder)(int ch, FILE *fout);
 void transform(FILE *fin, Encoder encode, FILE *fout);
-void cp1251ToUtf8(int ch, char *result, int * i);
-void koi8ToUtf8(int ch, char *result, int * i);
-void iso8859_5ToUtf8(int ch, char *result, int * i);
+void cp1251ToUtf8(int ch, FILE *fout);
+void koi8ToUtf8(int ch, FILE *fout);
+void iso8859_5ToUtf8(int ch, FILE *fout);
 Encoder getEncoder(const char *encoding);
 
 int main(const int argc, const char * argv[])
@@ -36,55 +36,52 @@ int main(const int argc, const char * argv[])
 
 void transform(FILE *fin, const Encoder encode, FILE *fout)
 {
-    int ch, index;
+    int ch;
 
     while ((ch = getc(fin)) != EOF) {
-        char result[2];
-        index = 0;
         if (ch <= LAST_ASCII_SYMBOL) {
             fputc(ch, fout);
             continue;
         }
-        encode(ch, result, &index);
-        fprintf(fout, "%s", result);
+        encode(ch, fout);
     }
 }
 
-void cp1251ToUtf8(const int ch, char *result, int * i)
+void cp1251ToUtf8(const int ch, FILE *fout)
 {
     if (ch == 168) { //Ё
-        result[(*i)++] = '\320';
-        result[(*i)++] = '\201';
+        fputc('\320', fout);
+        fputc('\201', fout);
     } else if (ch == 184) { //ё
-        result[(*i)++] = '\320';
-        result[(*i)++] = '\221';
+        fputc('\320', fout);
+        fputc('\221', fout);
     } else if (ch >= 192 && ch < 240) {
-        result[(*i)++] = '\320';
-        result[(*i)++] = (char) (ch - 48);
+        fputc('\320', fout);
+        fputc(ch - 48, fout);
     } else if (ch >= 240 && ch <= 255) {
-        result[(*i)++] = '\321';
-        result[(*i)++] = (char) (ch - 112);
+        fputc('\321', fout);
+        fputc(ch - 112, fout);
     }
 }
 
-void iso8859_5ToUtf8(const int ch, char *result, int * i)
+void iso8859_5ToUtf8(const int ch, FILE *fout)
 {
     if (ch == 161) { //Ё
-        result[(*i)++] = '\320';
-        result[(*i)++] = '\201';
+        fputc('\320', fout);
+        fputc('\201', fout);
     } else if (ch == 241) { //ё
-        result[(*i)++] = '\320';
-        result[(*i)++] = '\221';
+        fputc('\320', fout);
+        fputc('\221', fout);
     } else if (ch >= 176 && ch < 224) {
-        result[(*i)++] = '\320';
-        result[(*i)++] = (char) (ch - 32);
+        fputc('\320', fout);
+        fputc(ch - 32, fout);
     } else if (ch >= 224 && ch <= 239) {
-        result[(*i)++] = '\321';
-        result[(*i)++] = (char) (ch - 96);
+        fputc('\321', fout);
+        fputc(ch - 96, fout);
     }
 }
 
-void koi8ToUtf8(const int ch, char *result, int * i)
+void koi8ToUtf8(const int ch, FILE *fout)
 {
     static char map[256][2] = {
         [225] = {'\320','\220'},
@@ -159,8 +156,8 @@ void koi8ToUtf8(const int ch, char *result, int * i)
         return;
     }
 
-    result[(*i)++] = map[ch][0];
-    result[(*i)++] = map[ch][1];
+    fputc(map[ch][0], fout);
+    fputc(map[ch][1], fout);
 }
 
 Encoder getEncoder(const char *encoding)
