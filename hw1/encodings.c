@@ -1,12 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
-#define UTF8_MAX_BYTES 4
 #define LAST_ASCII_SYMBOL 127
 
 typedef void (*Encoder)(int ch, char *result, int * i);
-void transform(FILE *fp, Encoder encode, char *result);
+void transform(FILE *fin, Encoder encode, FILE *fout);
 void cp1251ToUtf8(int ch, char *result, int * i);
 void koi8ToUtf8(int ch, char *result, int * i);
 void iso8859_5ToUtf8(int ch, char *result, int * i);
@@ -14,7 +12,6 @@ Encoder getEncoder(const char *encoding);
 
 int main(const int argc, const char * argv[])
 {
-    struct stat sb;
     FILE* fin;
     FILE* fout;
     if (argc != 4) {
@@ -30,37 +27,27 @@ int main(const int argc, const char * argv[])
         fclose(fin);
         exit(EXIT_FAILURE);
     }
-    fstat(fileno(fin), &sb);
-    const long size = sb.st_size;
-    const Encoder encode = getEncoder(argv[2]);
-    char *result = malloc(size*sizeof(char) * UTF8_MAX_BYTES);
-    transform(fin, encode, result);
-    fprintf(fout, "%s", result);
-    free(result);
+    transform(fin, getEncoder(argv[2]), fout);
     fclose(fin);
     fclose(fout);
 
     return EXIT_SUCCESS;
 }
 
-void transform(FILE *fp, const Encoder encode, char *result)
+void transform(FILE *fin, const Encoder encode, FILE *fout)
 {
-    if (result == NULL) {
-        printf("Result string pointer is null\n");
-        exit(EXIT_FAILURE);
-    }
-    int ch;
-    int index = 0;
+    int ch, index;
 
-    while ((ch = getc(fp)) != EOF) {
+    while ((ch = getc(fin)) != EOF) {
+        char result[2];
+        index = 0;
         if (ch <= LAST_ASCII_SYMBOL) {
-            result[index++] = (char) ch;
+            fputc(ch, fout);
             continue;
         }
         encode(ch, result, &index);
+        fprintf(fout, "%s", result);
     }
-
-    result[index] = '\0';
 }
 
 void cp1251ToUtf8(const int ch, char *result, int * i)
