@@ -6,7 +6,7 @@ enum {
     NUM_COLUMNS
 };
 
-void build_tree_model(const gchar *dirPath, GtkTreeStore *tree_store, GtkTreeIter *current, GtkTreeIter *parent)
+void buildTreeModel(const gchar *dirPath, GtkTreeStore *tree_store, GtkTreeIter *current, GtkTreeIter *parent)
 {
     const gchar *filename;
     // Открываем директорию
@@ -26,7 +26,7 @@ void build_tree_model(const gchar *dirPath, GtkTreeStore *tree_store, GtkTreeIte
 
         // Если это директория рекурсивно проходим по ней
         if (g_file_test(full_path, G_FILE_TEST_IS_DIR)) {
-            build_tree_model(full_path, tree_store, &child, current);
+            buildTreeModel(full_path, tree_store, &child, current);
         }
 
         g_free(full_path);
@@ -43,7 +43,7 @@ void renderTreeViewWidget(GtkWidget *window)
     GtkTreeStore *tree_store = gtk_tree_store_new(NUM_COLUMNS, G_TYPE_STRING, G_TYPE_INT);
     GtkTreeIter current;
     // Строим дерево
-    build_tree_model(currentDir, tree_store, &current, NULL);
+    buildTreeModel(currentDir, tree_store, &current, NULL);
     // Создаем виджет GtkTreeView и подключаем модель
     GtkWidget *tree_view = gtk_tree_view_new_with_model(GTK_TREE_MODEL(tree_store));
     // Колонка "File system"
