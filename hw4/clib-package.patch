@@ -1,33 +1,64 @@
-8a9,10
-> #define _XOPEN_SOURCE 500
-> #define _POSIX_C_SOURCE 200112L
-656a659,661
->       if (res) {
->         http_get_free(res);
->       }
-664,665d668
-<       json = res->data;
-<       _debug("status: %d", res->status);
-666a670,674
->         if (res) {
->           _debug("status: %d", res->status);
->           http_get_free(res);
->           res = NULL;
->         }
-668a677
->       json = res->data;
-999c1008
-<   int *status = malloc(sizeof(int));
----
->   int status;
-1002c1011
-<   *status = rc;
----
->   status = rc;
-1004c1013
-<   pthread_exit((void *)status);
----
->   pthread_exit((void *)&status);
-1590a1600,1601
-> 
->   clib_package_cleanup();
+--- _clib-package.c	2020-09-08 02:51:23.000000000 +0300
++++ clib-package.c	2025-02-08 20:41:47.343353497 +0300
+@@ -6,6 +6,8 @@
+ // MIT license
+ //
+ 
++#define _XOPEN_SOURCE 500
++#define _POSIX_C_SOURCE 200112L
+ #if defined(__unix__) || (defined(__APPLE__) && defined(__MACH__))
+ #include <unistd.h>
+ #endif
+@@ -654,6 +656,9 @@
+     if (retries-- <= 0) {
+       goto error;
+     } else {
++      if (res) {
++        http_get_free(res);
++      }
+ #ifdef HAVE_PTHREADS
+       init_curl_share();
+       _debug("GET %s", json_url);
+@@ -661,11 +666,15 @@
+ #else
+       res = http_get(json_url);
+ #endif
+-      json = res->data;
+-      _debug("status: %d", res->status);
+       if (!res || !res->ok) {
++        if (res) {
++          _debug("status: %d", res->status);
++          http_get_free(res);
++          res = NULL;
++        }
+         goto download;
+       }
++      json = res->data;
+       log = "fetch";
+     }
+   }
+@@ -996,12 +1005,12 @@
+ #ifdef HAVE_PTHREADS
+ static void *fetch_package_file_thread(void *arg) {
+   fetch_package_file_thread_data_t *data = arg;
+-  int *status = malloc(sizeof(int));
++  int status;
+   int rc =
+       fetch_package_file_work(data->pkg, data->dir, data->file, data->verbose);
+-  *status = rc;
++  status = rc;
+   (void)data->pkg->refs--;
+-  pthread_exit((void *)status);
++  pthread_exit((void *)&status);
+   return (void *)rc;
+ }
+ #endif
+@@ -1588,6 +1597,8 @@
+     list_iterator_destroy(iterator);
+   if (command)
+     free(command);
++
++  clib_package_cleanup();
+ #ifdef HAVE_PTHREADS
+   if (NULL != pkg && NULL != pkg->src) {
+     if (pkg->src->len > 0) {
