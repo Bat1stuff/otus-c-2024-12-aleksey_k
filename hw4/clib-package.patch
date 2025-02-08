@@ -1,0 +1,33 @@
+8a9,10
+> #define _XOPEN_SOURCE 500
+> #define _POSIX_C_SOURCE 200112L
+656a659,661
+>       if (res) {
+>         http_get_free(res);
+>       }
+664,665d668
+<       json = res->data;
+<       _debug("status: %d", res->status);
+666a670,674
+>         if (res) {
+>           _debug("status: %d", res->status);
+>           http_get_free(res);
+>           res = NULL;
+>         }
+668a677
+>       json = res->data;
+999c1008
+<   int *status = malloc(sizeof(int));
+---
+>   int status;
+1002c1011
+<   *status = rc;
+---
+>   status = rc;
+1004c1013
+<   pthread_exit((void *)status);
+---
+>   pthread_exit((void *)&status);
+1590a1600,1601
+> 
+>   clib_package_cleanup();
